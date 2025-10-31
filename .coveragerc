@@ -1,0 +1,13 @@
+[run]
+branch = True
+data_file = .coverage/.coverage
+omit =
+    */.local/*
+    */tests/*
+    */__init__.py
+
+[html]
+directory = .coverage/html-report
+
+[xml]
+output = .coverage/coverage.xml

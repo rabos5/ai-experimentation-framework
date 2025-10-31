@@ -1,0 +1,77 @@
+body {
+    margin: 0;
+    padding: 0;
+    max-height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Söhne, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", sans-serif, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-weight: 400;
+    background-color: #ffffff;
+}
+
+header {
+    background-color: #079543;
+    color: #ffffff;
+    padding: 1rem;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    height: 45px;
+}
+
+nav ul {
+    list-style-type: none;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+nav ul li {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+
+nav ul li:last-child {
+    margin-right: 20px;
+}
+
+nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 10px;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+a {
+    text-decoration: none;
+}
+
+footer {
+    background-color: #f0f0f0;
+    padding: 1rem;
+    text-align: center;
+}
+
+footer p a {
+    color: #000000;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 10px;
+}
