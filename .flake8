@@ -1,0 +1,13 @@
+[flake8]
+exclude =
+    .git
+    .pytest_cache
+    __pycache__
+    reports
+    build
+    dist
+    *.pyc
+ignore =
+    F401
+    W292
+max-line-length = 250

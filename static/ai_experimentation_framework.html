@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: "hsl(var(--primary))",
+                        secondary: "hsl(var(--secondary))",
+                        destructive: "hsl(var(--destructive))",
+                        muted: "hsl(var(--muted))",
+                        accent: "hsl(var(--accent))",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @layer base {
+            :root {
+                --background: 240 10% 3.9%;
+                --foreground: 0 0% 98%;
+                --card: 240 10% 3.9%;
+                --card-foreground: 0 0% 98%;
+                --popover: 240 10% 3.9%;
+                --popover-foreground: 0 0% 98%;
+                --primary: 0 0% 98%;
+                --primary-foreground: 240 5.9% 10%;
+                --secondary: 240 3.7% 15.9%;
+                --secondary-foreground: 0 0% 98%;
+                --muted: 240 3.7% 15.9%;
+                --muted-foreground: 240 5% 64.9%;
+                --accent: 240 3.7% 15.9%;
+                --accent-foreground: 0 0% 98%;
+                --destructive: 0 62.8% 30.6%;
+                --destructive-foreground: 0 0% 98%;
+                --border: 240 3.7% 15.9%;
+                --input: 240 3.7% 15.9%;
+                --ring: 240 4.9% 83.9%;
+            }
+        }
+
+        .model-container {
+            transition: width 0.3s ease;
+        }
+        
+        .config-section {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+            overflow: hidden;
+        }
+
+        .config-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .sidebar {
+            background-color: hsl(var(--background));
+            border-right: 1px solid hsl(var(--border));
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: hsl(var(--input));
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: hsl(var(--primary));
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .prompt-area {
+            max-height: 50vh;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .chat-message {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
+        }
+
+        .user-message {
+            background-color: hsl(var(--secondary));
+        }
+
+        .model-message {
+            background-color: hsl(var(--muted));
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-background border-r border-border p-4 transform -translate-x-full transition-transform duration-200 ease-in-out">
+        <h2 class="text-xl font-semibold mb-4">Conversations</h2>
+        <div class="space-y-2">
+            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_123456</button>
+            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_789012</button>
+            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_345678</button>
+        </div>
+    </div>
+
+    <!-- Toggle Sidebar Button -->
+    <button id="toggleSidebar" class="fixed left-4 top-4 p-2 hover:bg-secondary rounded-md transition-colors">
+        ☰
+    </button>
+
+    <!-- Main Content -->
+    <main class="ml-16 p-8">
+        <!-- Add Model Button -->
+        <div class="flex justify-end mb-4">
+            <button id="addModelBtn" 
+                    class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="enabled-text text-black">+</span>
+                <span class="disabled-text text-black hidden">+</span>
+            </button>
+        </div>
+
+        <!-- Model Containers Wrapper -->
+        <div id="modelContainersWrapper" class="flex gap-4 mb-6">
+            <!-- Single Model Container Template -->
+            <div class="model-container w-full border border-border rounded-lg p-4">
+                <!-- Config Toggle Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold">Model Configuration</h2>
+                    <div class="flex items-center gap-2">
+                        <button class="config-toggle p-2 hover:bg-secondary rounded-md transition-colors">
+                            ▼
+                        </button>
+                        <button class="remove-container-btn p-2 hover:bg-secondary rounded-md transition-colors">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collapsible Config Section -->
+                <div class="config-section">
+                    <div class="space-y-4 mb-4">
+                        <!-- Provider Select -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium">Provider</label>
+                            <select class="provider-select w-full p-2 rounded-md bg-secondary border border-border">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="google">Google</option>
+                                <option value="mistral">Mistral</option>
+                            </select>
+                        </div>
+
+                        <!-- Model Select -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium">Model</label>
+                            <select class="model-select w-full p-2 rounded-md bg-secondary border border-border">
+                                <option value="gpt4">GPT-4</option>
+                                <option value="gpt35">GPT-3.5</option>
+                            </select>
+                        </div>
+
+                        <!-- Saved Prompts -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium">Saved Prompts</label>
+                            <select class="prompt-select w-full p-2 rounded-md bg-secondary border border-border">
+                                <option value="">Select a prompt...</option>
+                                <option value="story">Write a story about...</option>
+                                <option value="code">Analyze this code...</option>
+                                <option value="concept">Explain the concept of...</option>
+                            </select>
+                        </div>
+
+                        <!-- Sliders -->
+                        <div class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Temperature: <span class="temp-value">0.56</span></label>
+                                <input type="range" class="temperature w-full accent-primary" min="0" max="1" step="0.01" value="0.56">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Maximum Length: <span class="max-length-value">256</span></label>
+                                <input type="range" class="max-length w-full accent-primary" min="1" max="2048" step="1" value="256">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium">Top P: <span class="top-p-value">0.9</span></label>
+                                <input type="range" class="top-p w-full accent-primary" min="0" max="1" step="0.01" value="0.9">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="chat-area hidden mt-4 space-y-4">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Prompt Area -->
+        <div class="w-full space-y-4">
+            <textarea
+                id="sharedPromptArea"
+                class="prompt-area w-full p-4 rounded-md bg-secondary border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Write a prompt..."></textarea>
+            
+            <!-- File Upload and Buttons Container -->
+            <div class="flex justify-between items-center">
+                <!-- File Upload -->
+                <div class="flex-grow">
+                    <input type="file" 
+                           id="fileUpload" 
+                           multiple 
+                           class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-secondary-foreground hover:file:bg-secondary/80 cursor-pointer">
+                </div>
+                
+                <!-- Buttons -->
+                <div class="flex gap-2">
+                    <button id="resetBtn" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                        Reset
+                    </button>
+                    <button id="submitBtn" class="px-4 py-2 bg-primary text-black rounded-md hover:bg-primary/90 transition-colors">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Model data
+        const modelsByProvider = {
+            openai: ['GPT-4', 'GPT-3.5'],
+            anthropic: ['Claude 3 Opus', 'Claude 3 Sonnet'],
+            google: ['Gemini Pro', 'Gemini Ultra'],
+            mistral: ['Mistral Large', 'Mistral Medium']
+        };
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        const MAX_CONTAINERS = 3;
+        const wrapper = document.getElementById('modelContainersWrapper');
+        const addModelBtn = document.getElementById('addModelBtn');
+        const templateContainer = wrapper.children[0];
+        const sharedPromptArea = document.getElementById('sharedPromptArea');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Initialize first container
+        initializeContainer(templateContainer);
+        updateRemoveButtons();
+        
+        function initializeContainer(container) {
+            // Config toggle
+            const toggleBtn = container.querySelector('.config-toggle');
+            const configSection = container.querySelector('.config-section');
+            toggleBtn.addEventListener('click', () => {
+                configSection.classList.toggle('collapsed');
+                toggleBtn.textContent = 
+                    configSection.classList.contains('collapsed') ? '▼' : '▲';
+            });
+
+            // Provider change handler
+            const providerSelect = container.querySelector('.provider-select');
+            const modelSelect = container.querySelector('.model-select');
+            providerSelect.addEventListener('change', () => {
+                const provider = providerSelect.value;
+                modelSelect.innerHTML = modelsByProvider[provider]
+                    .map(model => `<option value="${model.toLowerCase()}">${model}</option>`)
+                    .join('');
+            });
+
+            // Slider handlers
+            container.querySelectorAll('input[type="range"]').forEach(slider => {
+                const valueDisplay = slider.previousElementSibling.querySelector('span');
+                slider.addEventListener('input', () => {
+                    valueDisplay.textContent = slider.value;
+                });
+            });
+
+            // Remove container handler
+            const removeBtn = container.querySelector('.remove-container-btn');
+            removeBtn.addEventListener('click', () => {
+                if (wrapper.children.length > 1) {
+                    container.remove();
+                    updateContainerWidths();
+                    updateRemoveButtons();
+                    addModelBtn.disabled = wrapper.children.length >= MAX_CONTAINERS;
+                    updateAddButtonStyle();
+                }
+            });
+        }
+
+        function updateContainerWidths() {
+            const containerCount = wrapper.children.length;
+            const width = `${100 / containerCount}%`;
+            Array.from(wrapper.children).forEach(container => {
+                container.style.width = width;
+            });
+        }
+
+        function updateRemoveButtons() {
+            const containers = wrapper.children;
+            Array.from(containers).forEach(container => {
+                const removeBtn = container.querySelector('.remove-container-btn');
+                removeBtn.style.visibility = containers.length === 1 ? 'hidden' : 'visible';
+            });
+        }
+
+        function updateAddButtonStyle() {
+            const isDisabled = wrapper.children.length >= MAX_CONTAINERS;
+            addModelBtn.disabled = isDisabled;
+            addModelBtn.querySelector('.enabled-text').classList.toggle('hidden', isDisabled);
+            addModelBtn.querySelector('.disabled-text').classList.toggle('hidden', !isDisabled);
+        }
+
+        addModelBtn.addEventListener('click', () => {
+            if (wrapper.children.length < MAX_CONTAINERS) {
+                const newContainer = templateContainer.cloneNode(true);
+                wrapper.appendChild(newContainer);
+                initializeContainer(newContainer);
+                updateContainerWidths();
+                updateRemoveButtons();
+                updateAddButtonStyle();
+            }
+        });
+
+        // Shared prompt handlers
+        submitBtn.addEventListener('click', () => {
+            const prompt = sharedPromptArea.value;
+            if (!prompt.trim()) return;
+
+            Array.from(wrapper.children).forEach(container => {
+                const chatArea = container.querySelector('.chat-area');
+                chatArea.classList.remove('hidden');
+                
+                // Add user message
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.className = 'chat-message user-message';
+                userMessageDiv.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-semibold">User</span>
+                    </div>
+                    <div>${prompt}</div>
+                `;
+                chatArea.appendChild(userMessageDiv);
+
+                // Add model message
+                const modelMessageDiv = document.createElement('div');
+                modelMessageDiv.className = 'chat-message model-message';
+                const modelName = container.querySelector('.model-select').value;
+                modelMessageDiv.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-semibold">${modelName}</span>
+                    </div>
+                    <div>Sample response from the model would appear here...</div>
+                `;
+                chatArea.appendChild(modelMessageDiv);
+
+                // Scroll to bottom
+                chatArea.scrollTop = chatArea.scrollHeight;
+            });
+        });
+
+        resetBtn.addEventListener('click', () => {
+            sharedPromptArea.value = '';
+            document.getElementById('fileUpload').value = '';
+            Array.from(wrapper.children).forEach(container => {
+                container.querySelector('.provider-select').value = 'openai';
+                container.querySelector('.provider-select').dispatchEvent(new Event('change'));
+                container.querySelector('.prompt-select').value = '';
+                container.querySelectorAll('input[type="range"]').forEach(slider => {
+                    slider.value = slider.defaultValue;
+                    slider.dispatchEvent(new Event('input'));
+                });
+                const chatArea = container.querySelector('.chat-area');
+                chatArea.innerHTML = '';
+                chatArea.classList.add('hidden');
+            });
+        });
+
+        // Initialize the add button style
+        updateAddButtonStyle();
+    </script>
+</body>
+</html>
