@@ -1,59 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="fox">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLM Playground</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        border: "hsl(var(--border))",
-                        input: "hsl(var(--input))",
-                        background: "hsl(var(--background))",
-                        foreground: "hsl(var(--foreground))",
-                        primary: "hsl(var(--primary))",
-                        secondary: "hsl(var(--secondary))",
-                        destructive: "hsl(var(--destructive))",
-                        muted: "hsl(var(--muted))",
-                        accent: "hsl(var(--accent))",
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="/css/fox_theme.css" rel="stylesheet" type="text/css" />
     <style>
-        @layer base {
-            :root {
-                --background: 240 10% 3.9%;
-                --foreground: 0 0% 98%;
-                --card: 240 10% 3.9%;
-                --card-foreground: 0 0% 98%;
-                --popover: 240 10% 3.9%;
-                --popover-foreground: 0 0% 98%;
-                --primary: 0 0% 98%;
-                --primary-foreground: 240 5.9% 10%;
-                --secondary: 240 3.7% 15.9%;
-                --secondary-foreground: 0 0% 98%;
-                --muted: 240 3.7% 15.9%;
-                --muted-foreground: 240 5% 64.9%;
-                --accent: 240 3.7% 15.9%;
-                --accent-foreground: 0 0% 98%;
-                --destructive: 0 62.8% 30.6%;
-                --destructive-foreground: 0 0% 98%;
-                --border: 240 3.7% 15.9%;
-                --input: 240 3.7% 15.9%;
-                --ring: 240 4.9% 83.9%;
-            }
-        }
-
         .model-container {
             transition: width 0.3s ease;
         }
-        
+
         .config-section {
             transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
             overflow: hidden;
@@ -64,68 +22,26 @@
             opacity: 0;
         }
 
-        .sidebar {
-            background-color: hsl(var(--background));
-            border-right: 1px solid hsl(var(--border));
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.hidden {
-            transform: translateX(-100%);
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            background: hsl(var(--input));
-            border-radius: 2px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: hsl(var(--primary));
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
         .prompt-area {
             max-height: 50vh;
             min-height: 100px;
             resize: vertical;
         }
-
-        .chat-message {
-            padding: 1rem;
-            margin: 0.5rem 0;
-            border-radius: 0.5rem;
-        }
-
-        .user-message {
-            background-color: hsl(var(--secondary));
-        }
-
-        .model-message {
-            background-color: hsl(var(--muted));
-        }
     </style>
 </head>
-<body class="min-h-screen bg-background text-foreground">
+<body class="min-h-screen bg-base-100 text-base-content">
     <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-background border-r border-border p-4 transform -translate-x-full transition-transform duration-200 ease-in-out">
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-base-200 border-r border-base-300 p-4 transform -translate-x-full transition-transform duration-200 ease-in-out z-50">
         <h2 class="text-xl font-semibold mb-4">Conversations</h2>
         <div class="space-y-2">
-            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_123456</button>
-            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_789012</button>
-            <button class="w-full text-left p-2 hover:bg-secondary rounded-md transition-colors">conv_345678</button>
+            <button class="btn btn-ghost w-full justify-start">conv_123456</button>
+            <button class="btn btn-ghost w-full justify-start">conv_789012</button>
+            <button class="btn btn-ghost w-full justify-start">conv_345678</button>
         </div>
     </div>
 
     <!-- Toggle Sidebar Button -->
-    <button id="toggleSidebar" class="fixed left-4 top-4 p-2 hover:bg-secondary rounded-md transition-colors">
+    <button id="toggleSidebar" class="btn btn-ghost fixed left-4 top-4 z-40">
         ☰
     </button>
 
@@ -133,87 +49,100 @@
     <main class="ml-16 p-8">
         <!-- Add Model Button -->
         <div class="flex justify-end mb-4">
-            <button id="addModelBtn" 
-                    class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <span class="enabled-text text-black">+</span>
-                <span class="disabled-text text-black hidden">+</span>
+            <button id="addModelBtn" class="btn btn-primary">
+                <span class="enabled-text">+</span>
+                <span class="disabled-text hidden">+</span>
             </button>
         </div>
 
         <!-- Model Containers Wrapper -->
         <div id="modelContainersWrapper" class="flex gap-4 mb-6">
             <!-- Single Model Container Template -->
-            <div class="model-container w-full border border-border rounded-lg p-4">
+            <div class="model-container w-full card bg-base-200 border border-base-300">
                 <!-- Config Toggle Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold">Model Configuration</h2>
-                    <div class="flex items-center gap-2">
-                        <button class="config-toggle p-2 hover:bg-secondary rounded-md transition-colors">
-                            ▼
-                        </button>
-                        <button class="remove-container-btn p-2 hover:bg-secondary rounded-md transition-colors">
-                            ✕
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Collapsible Config Section -->
-                <div class="config-section">
-                    <div class="space-y-4 mb-4">
-                        <!-- Provider Select -->
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium">Provider</label>
-                            <select class="provider-select w-full p-2 rounded-md bg-secondary border border-border">
-                                <option value="openai">OpenAI</option>
-                                <option value="anthropic">Anthropic</option>
-                                <option value="google">Google</option>
-                                <option value="mistral">Mistral</option>
-                            </select>
-                        </div>
-
-                        <!-- Model Select -->
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium">Model</label>
-                            <select class="model-select w-full p-2 rounded-md bg-secondary border border-border">
-                                <option value="gpt4">GPT-4</option>
-                                <option value="gpt35">GPT-3.5</option>
-                            </select>
-                        </div>
-
-                        <!-- Saved Prompts -->
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium">Saved Prompts</label>
-                            <select class="prompt-select w-full p-2 rounded-md bg-secondary border border-border">
-                                <option value="">Select a prompt...</option>
-                                <option value="story">Write a story about...</option>
-                                <option value="code">Analyze this code...</option>
-                                <option value="concept">Explain the concept of...</option>
-                            </select>
-                        </div>
-
-                        <!-- Sliders -->
-                        <div class="space-y-4">
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium">Temperature: <span class="temp-value">0.56</span></label>
-                                <input type="range" class="temperature w-full accent-primary" min="0" max="1" step="0.01" value="0.56">
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium">Maximum Length: <span class="max-length-value">256</span></label>
-                                <input type="range" class="max-length w-full accent-primary" min="1" max="2048" step="1" value="256">
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium">Top P: <span class="top-p-value">0.9</span></label>
-                                <input type="range" class="top-p w-full accent-primary" min="0" max="1" step="0.01" value="0.9">
-                            </div>
+                <div class="card-body">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="card-title">Model Configuration</h2>
+                        <div class="flex items-center gap-2">
+                            <button class="config-toggle btn btn-ghost btn-sm">
+                                ▼
+                            </button>
+                            <button class="remove-container-btn btn btn-ghost btn-sm">
+                                ✕
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Chat Area -->
-                <div class="chat-area hidden mt-4 space-y-4">
-                    <!-- Messages will be dynamically added here -->
+                    <!-- Collapsible Config Section -->
+                    <div class="config-section">
+                        <div class="space-y-4 mb-4">
+                            <!-- Provider Select -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Provider</span>
+                                </label>
+                                <select class="provider-select select select-bordered w-full">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google</option>
+                                    <option value="mistral">Mistral</option>
+                                </select>
+                            </div>
+
+                            <!-- Model Select -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Model</span>
+                                </label>
+                                <select class="model-select select select-bordered w-full">
+                                    <option value="gpt4">GPT-4</option>
+                                    <option value="gpt35">GPT-3.5</option>
+                                </select>
+                            </div>
+
+                            <!-- Saved Prompts -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Saved Prompts</span>
+                                </label>
+                                <select class="prompt-select select select-bordered w-full">
+                                    <option value="">Select a prompt...</option>
+                                    <option value="story">Write a story about...</option>
+                                    <option value="code">Analyze this code...</option>
+                                    <option value="concept">Explain the concept of...</option>
+                                </select>
+                            </div>
+
+                            <!-- Sliders -->
+                            <div class="space-y-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Temperature: <span class="temp-value">0.56</span></span>
+                                    </label>
+                                    <input type="range" class="temperature range range-primary" min="0" max="1" step="0.01" value="0.56">
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Maximum Length: <span class="max-length-value">256</span></span>
+                                    </label>
+                                    <input type="range" class="max-length range range-primary" min="1" max="2048" step="1" value="256">
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Top P: <span class="top-p-value">0.9</span></span>
+                                    </label>
+                                    <input type="range" class="top-p range range-primary" min="0" max="1" step="0.01" value="0.9">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div class="chat-area hidden mt-4 space-y-4">
+                        <!-- Messages will be dynamically added here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -222,25 +151,25 @@
         <div class="w-full space-y-4">
             <textarea
                 id="sharedPromptArea"
-                class="prompt-area w-full p-4 rounded-md bg-secondary border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+                class="prompt-area textarea textarea-bordered w-full"
                 placeholder="Write a prompt..."></textarea>
-            
+
             <!-- File Upload and Buttons Container -->
             <div class="flex justify-between items-center">
                 <!-- File Upload -->
                 <div class="flex-grow">
-                    <input type="file" 
-                           id="fileUpload" 
-                           multiple 
-                           class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-secondary-foreground hover:file:bg-secondary/80 cursor-pointer">
+                    <input type="file"
+                           id="fileUpload"
+                           multiple
+                           class="file-input file-input-bordered w-full max-w-xs">
                 </div>
-                
+
                 <!-- Buttons -->
                 <div class="flex gap-2">
-                    <button id="resetBtn" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                    <button id="resetBtn" class="btn btn-secondary">
                         Reset
                     </button>
-                    <button id="submitBtn" class="px-4 py-2 bg-primary text-black rounded-md hover:bg-primary/90 transition-colors">
+                    <button id="submitBtn" class="btn btn-primary">
                         Submit
                     </button>
                 </div>
@@ -362,24 +291,20 @@
                 
                 // Add user message
                 const userMessageDiv = document.createElement('div');
-                userMessageDiv.className = 'chat-message user-message';
+                userMessageDiv.className = 'chat chat-end';
                 userMessageDiv.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="font-semibold">User</span>
-                    </div>
-                    <div>${prompt}</div>
+                    <div class="chat-header">User</div>
+                    <div class="chat-bubble chat-bubble-primary">${prompt}</div>
                 `;
                 chatArea.appendChild(userMessageDiv);
 
                 // Add model message
                 const modelMessageDiv = document.createElement('div');
-                modelMessageDiv.className = 'chat-message model-message';
+                modelMessageDiv.className = 'chat chat-start';
                 const modelName = container.querySelector('.model-select').value;
                 modelMessageDiv.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="font-semibold">${modelName}</span>
-                    </div>
-                    <div>Sample response from the model would appear here...</div>
+                    <div class="chat-header">${modelName}</div>
+                    <div class="chat-bubble chat-bubble-secondary">Sample response from the model would appear here...</div>
                 `;
                 chatArea.appendChild(modelMessageDiv);
 
