@@ -38,3 +38,16 @@ async def get_ai_experimentation_framework(request: Request) -> HTMLResponse:
         status_code=200,
         content=rendered_html
     )
+
+
+@api_router.get("/ai_single_chat")
+async def get_ai_single_chat(request: Request) -> HTMLResponse:
+    with open(os.path.join(get_base_dir(), "static", "ai_single_chat.html"), "r") as f:
+        html_template = f.read()
+        template = Template(html_template)
+        rendered_html = template.render()
+
+    return HTMLResponse(
+        status_code=200,
+        content=rendered_html
+    )

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="fox">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/css/fox_theme.css" rel="stylesheet" type="text/css" />
+    <style>
+        .config-section {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+            overflow: hidden;
+        }
+
+        .config-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .prompt-area {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .chat-area {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-base-100 text-base-content">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-base-200 border-r border-base-300 p-4 transform -translate-x-full transition-transform duration-200 ease-in-out z-50">
+        <h2 class="text-xl font-semibold mb-4">Conversations</h2>
+        <div class="space-y-2">
+            <button class="btn btn-ghost w-full justify-start">conv_123456</button>
+            <button class="btn btn-ghost w-full justify-start">conv_789012</button>
+            <button class="btn btn-ghost w-full justify-start">conv_345678</button>
+        </div>
+    </div>
+
+    <!-- Toggle Sidebar Button -->
+    <button id="toggleSidebar" class="btn btn-ghost fixed left-4 top-4 z-40">
+        ☰
+    </button>
+
+    <!-- Main Content -->
+    <main class="ml-16 p-8 max-w-5xl mx-auto">
+        <!-- Single Chat Container -->
+        <div class="card bg-base-200 border border-base-300">
+            <div class="card-body">
+                <!-- Config Toggle Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="card-title">AI Chat</h2>
+                    <button class="config-toggle btn btn-ghost btn-sm">
+                        ▼
+                    </button>
+                </div>
+
+                <!-- Collapsible Config Section -->
+                <div class="config-section">
+                    <div class="space-y-4 mb-4">
+                        <!-- Provider Select -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Provider</span>
+                            </label>
+                            <select class="provider-select select select-bordered w-full">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="google">Google</option>
+                                <option value="mistral">Mistral</option>
+                            </select>
+                        </div>
+
+                        <!-- Model Select -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Model</span>
+                            </label>
+                            <select class="model-select select select-bordered w-full">
+                                <option value="gpt4">GPT-4</option>
+                                <option value="gpt35">GPT-3.5</option>
+                            </select>
+                        </div>
+
+                        <!-- Saved Prompts -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Saved Prompts</span>
+                            </label>
+                            <select class="prompt-select select select-bordered w-full">
+                                <option value="">Select a prompt...</option>
+                                <option value="story">Write a story about...</option>
+                                <option value="code">Analyze this code...</option>
+                                <option value="concept">Explain the concept of...</option>
+                            </select>
+                        </div>
+
+                        <!-- Sliders -->
+                        <div class="space-y-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Temperature: <span class="temp-value">0.56</span></span>
+                                </label>
+                                <input type="range" class="temperature range range-primary" min="0" max="1" step="0.01" value="0.56">
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Maximum Length: <span class="max-length-value">256</span></span>
+                                </label>
+                                <input type="range" class="max-length range range-primary" min="1" max="2048" step="1" value="256">
+                            </div>
+
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Top P: <span class="top-p-value">0.9</span></span>
+                                </label>
+                                <input type="range" class="top-p range range-primary" min="0" max="1" step="0.01" value="0.9">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider"></div>
+
+                <!-- Chat Area -->
+                <div class="chat-area space-y-4 mb-4">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+
+                <!-- Prompt Input Area -->
+                <div class="space-y-4">
+                    <textarea
+                        id="promptArea"
+                        class="prompt-area textarea textarea-bordered w-full"
+                        placeholder="Write a message..."></textarea>
+
+                    <!-- File Upload and Buttons -->
+                    <div class="flex justify-between items-center gap-4">
+                        <!-- File Upload -->
+                        <div class="flex-grow">
+                            <input type="file"
+                                   id="fileUpload"
+                                   multiple
+                                   class="file-input file-input-bordered w-full max-w-xs">
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex gap-2">
+                            <button id="clearBtn" class="btn btn-ghost">
+                                Clear
+                            </button>
+                            <button id="resetBtn" class="btn btn-secondary">
+                                Reset
+                            </button>
+                            <button id="submitBtn" class="btn btn-primary">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Model data
+        const modelsByProvider = {
+            openai: ['GPT-4', 'GPT-3.5'],
+            anthropic: ['Claude 3 Opus', 'Claude 3 Sonnet'],
+            google: ['Gemini Pro', 'Gemini Ultra'],
+            mistral: ['Mistral Large', 'Mistral Medium']
+        };
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Elements
+        const configToggle = document.querySelector('.config-toggle');
+        const configSection = document.querySelector('.config-section');
+        const providerSelect = document.querySelector('.provider-select');
+        const modelSelect = document.querySelector('.model-select');
+        const promptSelect = document.querySelector('.prompt-select');
+        const promptArea = document.getElementById('promptArea');
+        const chatArea = document.querySelector('.chat-area');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const fileUpload = document.getElementById('fileUpload');
+
+        // Config toggle
+        configToggle.addEventListener('click', () => {
+            configSection.classList.toggle('collapsed');
+            configToggle.textContent = configSection.classList.contains('collapsed') ? '▼' : '▲';
+        });
+
+        // Provider change handler
+        providerSelect.addEventListener('change', () => {
+            const provider = providerSelect.value;
+            modelSelect.innerHTML = modelsByProvider[provider]
+                .map(model => `<option value="${model.toLowerCase().replace(/\s+/g, '-')}">${model}</option>`)
+                .join('');
+        });
+
+        // Slider handlers
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            const valueDisplay = slider.parentElement.querySelector('.label-text span');
+            slider.addEventListener('input', () => {
+                valueDisplay.textContent = slider.value;
+            });
+        });
+
+        // Prompt select handler
+        promptSelect.addEventListener('change', () => {
+            const selectedPrompt = promptSelect.value;
+            if (selectedPrompt === 'story') {
+                promptArea.value = 'Write a story about a brave explorer discovering a new world...';
+            } else if (selectedPrompt === 'code') {
+                promptArea.value = 'Analyze this code and suggest improvements...';
+            } else if (selectedPrompt === 'concept') {
+                promptArea.value = 'Explain the concept of quantum computing in simple terms...';
+            }
+        });
+
+        // Submit handler
+        submitBtn.addEventListener('click', () => {
+            const prompt = promptArea.value.trim();
+            if (!prompt) return;
+
+            // Add user message
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'chat chat-end';
+            userMessageDiv.innerHTML = `
+                <div class="chat-header">You</div>
+                <div class="chat-bubble chat-bubble-primary">${prompt}</div>
+            `;
+            chatArea.appendChild(userMessageDiv);
+
+            // Clear prompt
+            promptArea.value = '';
+
+            // Simulate model response (replace with actual API call)
+            setTimeout(() => {
+                const modelMessageDiv = document.createElement('div');
+                modelMessageDiv.className = 'chat chat-start';
+                const modelName = modelSelect.options[modelSelect.selectedIndex].text;
+                modelMessageDiv.innerHTML = `
+                    <div class="chat-header">${modelName}</div>
+                    <div class="chat-bubble chat-bubble-secondary">This is a sample response from the model. In production, this would be replaced with actual API responses.</div>
+                `;
+                chatArea.appendChild(modelMessageDiv);
+
+                // Scroll to bottom
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 500);
+
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+        });
+
+        // Clear chat handler
+        clearBtn.addEventListener('click', () => {
+            chatArea.innerHTML = '';
+        });
+
+        // Reset handler
+        resetBtn.addEventListener('click', () => {
+            // Reset form
+            providerSelect.value = 'openai';
+            providerSelect.dispatchEvent(new Event('change'));
+            promptSelect.value = '';
+            promptArea.value = '';
+            fileUpload.value = '';
+
+            // Reset sliders
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.value = slider.defaultValue;
+                slider.dispatchEvent(new Event('input'));
+            });
+
+            // Clear chat
+            chatArea.innerHTML = '';
+        });
+
+        // Allow Enter to submit (Shift+Enter for new line)
+        promptArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
