@@ -1,34 +1,55 @@
-@plugin "daisyui/theme" {
-  name: "fox";
-  default: true;
-  prefersdark: true;
-  color-scheme: "dark";
-  --color-base-100: oklch(24.353% 0 0);
-  --color-base-200: oklch(22.648% 0 0);
-  --color-base-300: oklch(20.944% 0 0);
-  --color-base-content: oklch(100% 0 0);
-  --color-primary: oklch(44% 0.043 257.281);
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(64.092% 0.027 229.389);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(62% 0.194 149.214);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(27.441% 0.013 253.041);
-  --color-neutral-content: oklch(100% 0 0);
-  --color-info: oklch(44% 0.043 257.281);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(62% 0.194 149.214);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(64% 0.222 41.116);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(57% 0.245 27.325);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
+/* DaisyUI v5 Fox Theme - Custom Dark Theme */
+[data-theme="fox"] {
+  color-scheme: dark;
+
+  /* Base colors */
+  --b1: 24.353% 0 0;           /* base-100 - darkest background */
+  --b2: 22.648% 0 0;           /* base-200 - darker background */
+  --b3: 20.944% 0 0;           /* base-300 - darkest background */
+  --bc: 100% 0 0;              /* base-content - text color */
+
+  /* Primary color */
+  --p: 44% 0.043 257.281;      /* primary - purple-blue */
+  --pc: 100% 0 0;              /* primary-content - white text */
+
+  /* Secondary color */
+  --s: 64.092% 0.027 229.389;  /* secondary - light blue */
+  --sc: 100% 0 0;              /* secondary-content - white text */
+
+  /* Accent color */
+  --a: 62% 0.194 149.214;      /* accent - green */
+  --ac: 100% 0 0;              /* accent-content - white text */
+
+  /* Neutral color */
+  --n: 27.441% 0.013 253.041;  /* neutral - dark gray */
+  --nc: 100% 0 0;              /* neutral-content - white text */
+
+  /* Semantic colors */
+  --in: 44% 0.043 257.281;     /* info - same as primary */
+  --inc: 100% 0 0;             /* info-content */
+
+  --su: 62% 0.194 149.214;     /* success - green */
+  --suc: 100% 0 0;             /* success-content */
+
+  --wa: 64% 0.222 41.116;      /* warning - orange */
+  --wac: 100% 0 0;             /* warning-content */
+
+  --er: 57% 0.245 27.325;      /* error - red */
+  --erc: 100% 0 0;             /* error-content */
+
+  /* Border radius */
+  --rounded-box: 0.5rem;       /* border radius for cards and boxes */
+  --rounded-btn: 0.5rem;       /* border radius for buttons */
+  --rounded-badge: 0.5rem;     /* border radius for badges */
+
+  /* Animation */
+  --animation-btn: 0.25s;      /* duration of button animation */
+  --animation-input: 0.2s;     /* duration of input animation */
+
+  /* Border width */
+  --border-btn: 1px;           /* border width for buttons */
+
+  /* Focus ring */
+  --tab-border: 1px;           /* border width for tabs */
+  --tab-radius: 0.5rem;        /* border radius for tabs */
 }
