@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="fox">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link href="/css/output.css" rel="stylesheet" type="text/css" />
+    <style>
+        .config-section {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+            overflow: hidden;
+        }
+
+        .config-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .prompt-area {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .chat-area {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        #sidebar .label-text,
+        #sidebar .label-text-alt {
+            font-size: 14px;
+        }
+
+        /* Dropdown menu styling */
+        .dropdown .dropdown-content {
+            display: none;
+        }
+
+        .dropdown:focus-within .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-base-100 text-base-content">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed bg-base-200 border-r border-base-300 p-4 transform -translate-x-full transition-transform duration-200 ease-in-out overflow-y-auto" style="top: 77px; bottom: 65px; z-index: 50; width: 320px;">
+        <div class="flex items-center justify-between mb-4">
+            <div class="tooltip tooltip-right" data-tip="Start new chat">
+                <button id="newChatBtn" class="btn btn-circle btn-primary">+</button>
+            </div>
+            <button id="closeSidebar" class="btn btn-ghost" style="min-height: 2rem; height: 2rem; padding: 0.5rem;">☰</button>
+        </div>
+
+        <!-- Collapsible Config Section -->
+        <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold">Model Configuration</h3>
+                <button id="configToggle" class="btn btn-ghost btn-sm">▼</button>
+            </div>
+
+            <!-- LLM Config moved here -->
+            <div id="configSection" class="space-y-4">
+            <!-- Provider Select -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Provider</span>
+                </label>
+                <select class="provider-select select select-bordered w-full">
+                    <option value="azure">Azure</option>
+                    <option value="aws-bedrock">AWS Bedrock</option>
+                    <option value="ollama">Ollama</option>
+                </select>
+            </div>
+
+            <!-- Model Select -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Model</span>
+                </label>
+                <select class="model-select select select-bordered w-full">
+                    <option value="gpt-5">gpt-5</option>
+                    <option value="gpt-4o">gpt-4o</option>
+                    <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+            </div>
+
+            <!-- Model Reasoning Toggle -->
+            <div class="form-control">
+                <label class="label cursor-pointer">
+                    <span class="label-text">Model Reasoning</span>
+                    <input type="checkbox" class="toggle toggle-primary" id="modelReasoningToggle">
+                </label>
+            </div>
+
+            <!-- Sliders -->
+            <div class="space-y-4">
+                <!-- Max Reasoning Tokens (hidden by default) -->
+                <div class="form-control hidden" id="maxReasoningTokensControl">
+                    <div class="label">
+                        <span class="label-text">Max Reasoning Tokens: </span>
+                        <span class="label-text-alt max-reasoning-tokens-value">3000</span>
+                    </div>
+                    <input type="range" class="max-reasoning-tokens range range-primary" min="1000" max="64000" step="100" value="3000">
+                </div>
+
+                <div class="form-control">
+                    <div class="label">
+                        <span class="label-text">Max Tokens: </span>
+                        <span class="label-text-alt max-tokens-value">5000</span>
+                    </div>
+                    <input type="range" class="max-tokens range range-primary" min="1000" max="64000" step="1" value="5000">
+                </div>
+
+                <div class="form-control">
+                    <div class="label">
+                        <span class="label-text">Temperature: </span>
+                        <span class="label-text-alt temp-value">0.2</span>
+                    </div>
+                    <input type="range" class="temperature range range-primary" min="0" max="1" step="0.01" value="0.2">
+                </div>
+
+                <div class="form-control">
+                    <div class="label">
+                        <span class="label-text">Top P: </span>
+                        <span class="label-text-alt top-p-value">0.9</span>
+                    </div>
+                    <input type="range" class="top-p range range-primary" min="0" max="1" step="0.01" value="0.9">
+                </div>
+
+                <div class="form-control">
+                    <div class="label">
+                        <span class="label-text">Top K: </span>
+                        <span class="label-text-alt top-k-value">75</span>
+                    </div>
+                    <input type="range" class="top-k range range-primary" min="1" max="2048" step="1" value="75">
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Conversations List -->
+        <div class="mt-6">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold">Conversations</h3>
+                <button id="conversationsToggle" class="btn btn-ghost btn-sm">▼</button>
+            </div>
+            <div id="conversationsList" class="space-y-2">
+                <button class="btn btn-ghost w-full justify-start">conv_123456</button>
+                <button class="btn btn-ghost w-full justify-start">conv_789012</button>
+                <button class="btn btn-ghost w-full justify-start">conv_345678</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle Sidebar Button -->
+    <button id="toggleSidebar" class="btn btn-ghost fixed left-4 z-50" style="top: 90px; min-height: 2rem; height: 2rem; padding: 0.5rem;">☰</button>
+
+    <!-- Navbar -->
+    <header class="bg-base-200 border-b border-base-300 text-base-content" style="position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100; padding: 1rem;">
+        <nav class="flex justify-between items-center" style="height: 45px; padding: 10px 20px;">
+            <div class="flex-1">
+                <a class="btn btn-ghost text-xl">Chat</a>
+            </div>
+            <!-- User Profile Dropdown -->
+            <div class="dropdown dropdown-end">
+                <button tabindex="0" class="btn btn-ghost btn-circle avatar">
+                    <div class="w-10 rounded-full bg-base-300 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                    </div>
+                </button>
+                <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border border-base-300">
+                    <li><a>Settings</a></li>
+                    <li><a>Usage Metrics</a></li>
+                    <li><hr class="my-2" /></li>
+                    <li><a>Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="px-8 max-w-5xl mx-auto" style="padding-top: 100px; padding-bottom: 85px;">
+        <!-- Single Chat Container -->
+        <div class="card bg-base-200 border border-base-300">
+            <div class="card-body">
+
+                <!-- Chat Area -->
+                <div class="chat-area space-y-4 mb-4 hidden">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+
+                <!-- Prompt Input Area -->
+                <div class="space-y-4">
+                    <!-- Saved Prompts -->
+                    <select id="savedPromptSelect" class="select select-bordered w-full">
+                        <option value="" disabled selected style="color: #6b7280;">... optional select from saved prompts ...</option>
+                        <option value="story">Write a story about...</option>
+                        <option value="code">Analyze this code...</option>
+                        <option value="concept">Explain the concept of...</option>
+                    </select>
+
+                    <textarea
+                        id="promptArea"
+                        class="prompt-area textarea textarea-bordered w-full"
+                        placeholder="How can I help?"></textarea>
+
+                    <!-- File Upload and Buttons -->
+                    <div class="flex justify-between items-center gap-4">
+                        <!-- File Upload (hidden) -->
+                        <input type="file"
+                               id="fileUpload"
+                               multiple
+                               class="hidden">
+
+                        <!-- Upload Button (Left) -->
+                        <div class="tooltip tooltip-right" data-tip="Upload files">
+                            <button id="fileUploadBtn" class="btn btn-circle btn-primary">
+                                📎
+                            </button>
+                        </div>
+
+                        <!-- Submit Button (Right) -->
+                        <div class="tooltip tooltip-left" data-tip="Send message">
+                            <button id="submitBtn" class="btn btn-circle btn-primary">
+                                ↑
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-base-200 border-t border-base-300 text-base-content" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; z-index: 100; padding: 1rem; text-align: center;">
+        <p style="margin: 0; font-size: 10px;">by fox dev team</p>
+    </footer>
+
+    <script>
+        // Model data
+        const modelsByProvider = {
+            azure: ['gpt-5', 'gpt-4o', 'gpt-4o-mini'],
+            'aws-bedrock': ['claude-sonnet-4.5', 'claude-haiku-4.5', 'claude-sonnet-3.5'],
+            ollama: ['llama3.2', 'llama3.2-vision', 'mistral']
+        };
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            // Hide toggle button when sidebar is open
+            if (!sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar.style.display = 'none';
+            }
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            // Show toggle button when sidebar is closed
+            toggleSidebar.style.display = 'block';
+        });
+
+        // Config section toggle
+        const configToggle = document.getElementById('configToggle');
+        const configSection = document.getElementById('configSection');
+
+        configToggle.addEventListener('click', () => {
+            configSection.classList.toggle('hidden');
+            configToggle.textContent = configSection.classList.contains('hidden') ? '▼' : '▲';
+        });
+
+        // Conversations list toggle
+        const conversationsToggle = document.getElementById('conversationsToggle');
+        const conversationsList = document.getElementById('conversationsList');
+
+        conversationsToggle.addEventListener('click', () => {
+            conversationsList.classList.toggle('hidden');
+            conversationsToggle.textContent = conversationsList.classList.contains('hidden') ? '▼' : '▲';
+        });
+
+        // Elements
+        const providerSelect = document.querySelector('.provider-select');
+        const modelSelect = document.querySelector('.model-select');
+        const savedPromptSelect = document.getElementById('savedPromptSelect');
+        const promptArea = document.getElementById('promptArea');
+        const chatArea = document.querySelector('.chat-area');
+        const submitBtn = document.getElementById('submitBtn');
+        const fileUpload = document.getElementById('fileUpload');
+        const fileUploadBtn = document.getElementById('fileUploadBtn');
+        const modelReasoningToggle = document.getElementById('modelReasoningToggle');
+        const maxReasoningTokensControl = document.getElementById('maxReasoningTokensControl');
+
+        // File upload button handler
+        fileUploadBtn.addEventListener('click', () => {
+            fileUpload.click();
+        });
+
+        // New chat button handler
+        const newChatBtn = document.getElementById('newChatBtn');
+        newChatBtn.addEventListener('click', () => {
+            // Reset form
+            providerSelect.value = 'azure';
+            providerSelect.dispatchEvent(new Event('change'));
+            savedPromptSelect.value = '';
+            promptArea.value = '';
+            fileUpload.value = '';
+
+            // Reset reasoning toggle
+            modelReasoningToggle.checked = false;
+            modelReasoningToggle.dispatchEvent(new Event('change'));
+
+            // Reset sliders
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.value = slider.defaultValue;
+                slider.dispatchEvent(new Event('input'));
+            });
+
+            // Clear chat and hide chat area
+            chatArea.innerHTML = '';
+            chatArea.classList.add('hidden');
+
+            // Close sidebar and show toggle button
+            sidebar.classList.add('-translate-x-full');
+            toggleSidebar.style.display = 'block';
+        });
+
+        // Reasoning mode sliders
+        const temperatureSlider = document.querySelector('.temperature');
+        const topPSlider = document.querySelector('.top-p');
+        const topKSlider = document.querySelector('.top-k');
+        const maxReasoningTokensSlider = document.querySelector('.max-reasoning-tokens');
+
+        // Model Reasoning Toggle Handler
+        modelReasoningToggle.addEventListener('change', () => {
+            const isReasoningEnabled = modelReasoningToggle.checked;
+
+            // Disable/enable temperature, top-p, and top-k
+            temperatureSlider.disabled = isReasoningEnabled;
+            topPSlider.disabled = isReasoningEnabled;
+            topKSlider.disabled = isReasoningEnabled;
+
+            // Show/hide max reasoning tokens
+            if (isReasoningEnabled) {
+                maxReasoningTokensControl.classList.remove('hidden');
+
+                // Validate max reasoning tokens doesn't exceed max tokens
+                const maxTokens = parseInt(maxTokensSlider.value);
+                const maxReasoningTokens = parseInt(maxReasoningTokensSlider.value);
+                if (maxReasoningTokens > maxTokens) {
+                    maxReasoningTokensSlider.value = maxTokens;
+                    maxReasoningTokensValue.textContent = maxTokens;
+                }
+            } else {
+                maxReasoningTokensControl.classList.add('hidden');
+            }
+        });
+
+        // Provider change handler
+        providerSelect.addEventListener('change', () => {
+            const provider = providerSelect.value;
+            modelSelect.innerHTML = modelsByProvider[provider]
+                .map(model => `<option value="${model}">${model}</option>`)
+                .join('');
+        });
+
+        // Slider handlers - updated for new label structure
+        const maxTokensSlider = document.querySelector('.max-tokens');
+        const maxTokensValue = document.querySelector('.max-tokens-value');
+        const maxReasoningTokensValue = document.querySelector('.max-reasoning-tokens-value');
+
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            const valueDisplay = slider.parentElement.querySelector('.label-text-alt');
+            slider.addEventListener('input', () => {
+                valueDisplay.textContent = slider.value;
+
+                // Validate max reasoning tokens doesn't exceed max tokens when reasoning is enabled
+                if (modelReasoningToggle.checked) {
+                    const maxTokens = parseInt(maxTokensSlider.value);
+                    const maxReasoningTokens = parseInt(maxReasoningTokensSlider.value);
+
+                    if (slider.classList.contains('max-reasoning-tokens') && maxReasoningTokens > maxTokens) {
+                        maxReasoningTokensSlider.value = maxTokens;
+                        maxReasoningTokensValue.textContent = maxTokens;
+                    } else if (slider.classList.contains('max-tokens') && maxReasoningTokens > maxTokens) {
+                        maxReasoningTokensSlider.value = maxTokens;
+                        maxReasoningTokensValue.textContent = maxTokens;
+                    }
+                }
+            });
+        });
+
+        // Saved prompt select handler
+        savedPromptSelect.addEventListener('change', () => {
+            const selectedPrompt = savedPromptSelect.value;
+            if (selectedPrompt === 'story') {
+                promptArea.value = 'Write a story about a brave explorer discovering a new world...';
+            } else if (selectedPrompt === 'code') {
+                promptArea.value = 'Analyze this code and suggest improvements...';
+            } else if (selectedPrompt === 'concept') {
+                promptArea.value = 'Explain the concept of quantum computing in simple terms...';
+            }
+        });
+
+        // Submit handler
+        submitBtn.addEventListener('click', () => {
+            const prompt = promptArea.value.trim();
+            if (!prompt) return;
+
+            // Show chat area if hidden
+            if (chatArea.classList.contains('hidden')) {
+                chatArea.classList.remove('hidden');
+            }
+
+            // Add user message
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'mb-4 p-4 bg-base-300 border-l-4 border-primary';
+            userMessageDiv.innerHTML = `
+                <div class="font-semibold text-sm mb-2 text-primary">User</div>
+                <div class="text-base-content">${prompt}</div>
+            `;
+            chatArea.appendChild(userMessageDiv);
+
+            // Clear prompt
+            promptArea.value = '';
+
+            // Simulate model response (replace with actual API call)
+            setTimeout(() => {
+                const modelMessageDiv = document.createElement('div');
+                const modelName = modelSelect.options[modelSelect.selectedIndex].text;
+                modelMessageDiv.className = 'mb-4 p-4 bg-base-300 border-l-4 border-white';
+                modelMessageDiv.innerHTML = `
+                    <div class="font-semibold text-sm mb-2 text-white">${modelName}</div>
+                    <div class="text-white">This is a sample response from the model. In production, this would be replaced with actual API responses.</div>
+                `;
+                chatArea.appendChild(modelMessageDiv);
+
+                // Scroll to bottom
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 500);
+
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+        });
+
+        // Allow Enter to submit (Shift+Enter for new line)
+        promptArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

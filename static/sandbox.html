@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="fox">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox</title>
+    <link href="/css/output.css" rel="stylesheet" type="text/css" />
+    <style>
+        .model-container {
+            transition: width 0.3s ease;
+        }
+
+        .config-section {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+            overflow: hidden;
+        }
+
+        .config-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .prompt-area {
+            max-height: 50vh;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Dropdown menu styling */
+        .dropdown .dropdown-content {
+            display: none;
+        }
+
+        .dropdown:focus-within .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-base-100 text-base-content">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed w-64 bg-base-200 border-r border-base-300 p-4 transform -translate-x-full transition-transform duration-200 ease-in-out overflow-y-auto" style="top: 77px; bottom: 65px; z-index: 50;">
+        <div class="flex items-center justify-between mb-4">
+            <div class="tooltip tooltip-right" data-tip="Start new experiment">
+                <button id="newExperimentBtn" class="btn btn-circle btn-primary">+</button>
+            </div>
+            <button id="closeSidebar" class="btn btn-ghost" style="min-height: 2rem; height: 2rem; padding: 0.5rem;">☰</button>
+        </div>
+
+        <!-- Experiments List -->
+        <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold">Experiments</h3>
+                <button id="experimentsToggle" class="btn btn-ghost btn-sm">▼</button>
+            </div>
+            <div id="experimentsList" class="space-y-2">
+                <button class="btn btn-ghost w-full justify-start">exp_123456</button>
+                <button class="btn btn-ghost w-full justify-start">exp_789012</button>
+                <button class="btn btn-ghost w-full justify-start">exp_345678</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <header class="bg-base-200 border-b border-base-300 text-base-content" style="position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100; padding: 1rem;">
+        <nav class="flex justify-between items-center" style="height: 45px; padding: 10px 20px;">
+            <div class="flex-1">
+                <a class="btn btn-ghost text-xl">Sandbox</a>
+            </div>
+            <!-- User Profile Dropdown -->
+            <div class="dropdown dropdown-end">
+                <button tabindex="0" class="btn btn-ghost btn-circle avatar">
+                    <div class="w-10 rounded-full bg-base-300 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                    </div>
+                </button>
+                <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border border-base-300">
+                    <li><a>Settings</a></li>
+                    <li><a>Usage Metrics</a></li>
+                    <li><hr class="my-2" /></li>
+                    <li><a>Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Toggle Sidebar Button -->
+    <button id="toggleSidebar" class="btn btn-ghost fixed left-4 z-50" style="top: 90px; min-height: 2rem; height: 2rem; padding: 0.5rem;">☰</button>
+
+    <!-- Main Content -->
+    <main style="padding-top: 100px; padding-bottom: 85px; padding-left: 75px; padding-right: 75px;">
+        <!-- Add Model Button -->
+        <div class="flex justify-end mb-4">
+            <div class="tooltip tooltip-left" data-tip="Add model to compare">
+                <button id="addModelBtn" class="btn btn-circle btn-primary">
+                    <span class="enabled-text">+</span>
+                    <span class="disabled-text hidden">+</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Model Containers Wrapper -->
+        <div id="modelContainersWrapper" class="flex gap-4 mb-6">
+            <!-- Single Model Container Template -->
+            <div class="model-container w-full card bg-base-200 border border-base-300">
+                <!-- Config Toggle Header -->
+                <div class="card-body">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="card-title">Model Configuration</h2>
+                        <div class="flex items-center gap-2">
+                            <button class="config-toggle btn btn-ghost btn-sm">
+                                ▼
+                            </button>
+                            <button class="remove-container-btn btn btn-ghost btn-sm">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Config Section -->
+                    <div class="config-section">
+                        <div class="space-y-4 mb-4">
+                            <!-- Provider Select -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Provider</span>
+                                </label>
+                                <select class="provider-select select select-bordered w-full">
+                                    <option value="azure">Azure</option>
+                                    <option value="aws-bedrock">AWS Bedrock</option>
+                                    <option value="ollama">Ollama</option>
+                                </select>
+                            </div>
+
+                            <!-- Model Select -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Model</span>
+                                </label>
+                                <select class="model-select select select-bordered w-full">
+                                    <option value="gpt-5">gpt-5</option>
+                                    <option value="gpt-4o">gpt-4o</option>
+                                    <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                </select>
+                            </div>
+
+                            <!-- Model Reasoning Toggle -->
+                            <div class="form-control">
+                                <label class="label cursor-pointer">
+                                    <span class="label-text">Model Reasoning</span>
+                                    <input type="checkbox" class="toggle toggle-primary model-reasoning-toggle">
+                                </label>
+                            </div>
+
+                            <!-- Sliders -->
+                            <div class="space-y-4">
+                                <!-- Max Reasoning Tokens (hidden by default) -->
+                                <div class="form-control hidden max-reasoning-tokens-control">
+                                    <label class="label">
+                                        <span class="label-text">Max Reasoning Tokens: </span>
+                                        <span class="max-reasoning-tokens-value">3000</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" class="max-reasoning-tokens range range-primary flex-1" min="1000" max="64000" step="1" value="3000">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Max Tokens: </span>
+                                        <span class="max-tokens-value">5000</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" class="max-tokens range range-primary flex-1" min="1000" max="64000" step="1" value="5000">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Temperature: </span>
+                                        <span class="temp-value">0.2</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" class="temperature range range-primary flex-1" min="0" max="1" step="0.01" value="0.2">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Top P: </span>
+                                        <span class="top-p-value">0.9</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" class="top-p range range-primary flex-1" min="0" max="1" step="0.01" value="0.9">
+                                    </div>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Top K: </span>
+                                        <span class="top-k-value">75</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" class="top-k range range-primary flex-1" min="1" max="2048" step="1" value="75">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Chat Area -->
+                    <div class="chat-area hidden mt-4 space-y-4">
+                        <!-- Messages will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Prompt Area -->
+        <div class="w-full space-y-4">
+            <!-- Saved Prompts -->
+            <div class="form-control">
+                <select id="savedPromptSelect" class="select select-bordered w-full">
+                    <option value="" disabled selected style="color: #6b7280;">... optional select from saved prompts ...</option>
+                    <option value="story">Write a story about...</option>
+                    <option value="code">Analyze this code...</option>
+                    <option value="concept">Explain the concept of...</option>
+                </select>
+            </div>
+
+            <textarea
+                id="sharedPromptArea"
+                class="prompt-area textarea textarea-bordered w-full"
+                placeholder="Prompt goes here..."></textarea>
+
+            <!-- File Upload and Buttons Container -->
+            <div class="flex justify-between items-center">
+                <!-- File Upload (hidden) -->
+                <input type="file"
+                       id="fileUpload"
+                       multiple
+                       class="hidden">
+
+                <!-- Upload Button (Left) -->
+                <div class="tooltip tooltip-right" data-tip="Upload files">
+                    <button id="fileUploadBtn" class="btn btn-circle btn-primary">
+                        📎
+                    </button>
+                </div>
+
+                <!-- Submit Button (Right) -->
+                <div class="tooltip tooltip-left" data-tip="Send message">
+                    <button id="submitBtn" class="btn btn-circle btn-primary">
+                        ↑
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-base-200 border-t border-base-300 text-base-content" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; z-index: 100; padding: 1rem; text-align: center;">
+        <p style="margin: 0; font-size: 10px;">by fox dev team</p>
+    </footer>
+
+    <script>
+        // Model data
+        const modelsByProvider = {
+            azure: ['gpt-5', 'gpt-4o', 'gpt-4o-mini'],
+            'aws-bedrock': ['claude-sonnet-4.5', 'claude-haiku-4.5', 'claude-sonnet-3.5'],
+            ollama: ['llama3.2', 'llama3.2-vision', 'mistral']
+        };
+
+        // Sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            // Hide toggle button when sidebar is open
+            if (!sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar.style.display = 'none';
+            }
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            // Show toggle button when sidebar is closed
+            toggleSidebar.style.display = 'block';
+        });
+
+        // Experiments list toggle
+        const experimentsToggle = document.getElementById('experimentsToggle');
+        const experimentsList = document.getElementById('experimentsList');
+
+        experimentsToggle.addEventListener('click', () => {
+            experimentsList.classList.toggle('hidden');
+            experimentsToggle.textContent = experimentsList.classList.contains('hidden') ? '▼' : '▲';
+        });
+
+        const MAX_CONTAINERS = 3;
+        const wrapper = document.getElementById('modelContainersWrapper');
+        const addModelBtn = document.getElementById('addModelBtn');
+        const templateContainer = wrapper.children[0];
+        const sharedPromptArea = document.getElementById('sharedPromptArea');
+        const submitBtn = document.getElementById('submitBtn');
+        const fileUpload = document.getElementById('fileUpload');
+        const fileUploadBtn = document.getElementById('fileUploadBtn');
+
+        // File upload button handler
+        fileUploadBtn.addEventListener('click', () => {
+            fileUpload.click();
+        });
+
+        // Initialize first container
+        initializeContainer(templateContainer);
+        updateRemoveButtons();
+        
+        function initializeContainer(container) {
+            // Config toggle
+            const toggleBtn = container.querySelector('.config-toggle');
+            const configSection = container.querySelector('.config-section');
+            toggleBtn.addEventListener('click', () => {
+                configSection.classList.toggle('collapsed');
+                toggleBtn.textContent =
+                    configSection.classList.contains('collapsed') ? '▼' : '▲';
+            });
+
+            // Provider change handler
+            const providerSelect = container.querySelector('.provider-select');
+            const modelSelect = container.querySelector('.model-select');
+            providerSelect.addEventListener('change', () => {
+                const provider = providerSelect.value;
+                modelSelect.innerHTML = modelsByProvider[provider]
+                    .map(model => `<option value="${model}">${model}</option>`)
+                    .join('');
+            });
+
+            // Model Reasoning Toggle Handler
+            const reasoningToggle = container.querySelector('.model-reasoning-toggle');
+            const maxReasoningTokensControl = container.querySelector('.max-reasoning-tokens-control');
+            const temperatureSlider = container.querySelector('.temperature');
+            const topPSlider = container.querySelector('.top-p');
+            const topKSlider = container.querySelector('.top-k');
+
+            reasoningToggle.addEventListener('change', () => {
+                const isReasoningEnabled = reasoningToggle.checked;
+
+                // Disable/enable temperature, top-p, and top-k
+                temperatureSlider.disabled = isReasoningEnabled;
+                topPSlider.disabled = isReasoningEnabled;
+                topKSlider.disabled = isReasoningEnabled;
+
+                // Get slider references here since they're used below
+                const maxTokensSliderLocal = container.querySelector('.max-tokens');
+                const maxReasoningTokensSliderLocal = container.querySelector('.max-reasoning-tokens');
+                const maxTokensValueLocal = container.querySelector('.max-tokens-value');
+                const maxReasoningTokensValueLocal = container.querySelector('.max-reasoning-tokens-value');
+
+                // Show/hide max reasoning tokens
+                if (isReasoningEnabled) {
+                    maxReasoningTokensControl.classList.remove('hidden');
+
+                    // Validate max reasoning tokens doesn't exceed max tokens
+                    const maxTokens = parseInt(maxTokensSliderLocal.value);
+                    const maxReasoningTokens = parseInt(maxReasoningTokensSliderLocal.value);
+                    if (maxReasoningTokens > maxTokens) {
+                        maxReasoningTokensSliderLocal.value = maxTokens;
+                        maxReasoningTokensValueLocal.textContent = maxTokens;
+                    }
+                } else {
+                    maxReasoningTokensControl.classList.add('hidden');
+                }
+            });
+
+            // Slider handlers - updated for new structure
+            const maxTokensSlider = container.querySelector('.max-tokens');
+            const maxReasoningTokensSlider = container.querySelector('.max-reasoning-tokens');
+            const maxTokensValue = container.querySelector('.max-tokens-value');
+            const maxReasoningTokensValue = container.querySelector('.max-reasoning-tokens-value');
+
+            container.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.addEventListener('input', () => {
+                    // Find the value display span in the label above the slider
+                    const formControl = slider.closest('.form-control');
+                    const label = formControl.querySelector('.label');
+                    const valueDisplay = label.querySelector('span:last-child');
+                    valueDisplay.textContent = slider.value;
+
+                    // Validate max reasoning tokens doesn't exceed max tokens when reasoning is enabled
+                    if (reasoningToggle.checked) {
+                        const maxTokens = parseInt(maxTokensSlider.value);
+                        const maxReasoningTokens = parseInt(maxReasoningTokensSlider.value);
+
+                        if (slider.classList.contains('max-reasoning-tokens') && maxReasoningTokens > maxTokens) {
+                            maxReasoningTokensSlider.value = maxTokens;
+                            maxReasoningTokensValue.textContent = maxTokens;
+                        } else if (slider.classList.contains('max-tokens') && maxReasoningTokens > maxTokens) {
+                            maxReasoningTokensSlider.value = maxTokens;
+                            maxReasoningTokensValue.textContent = maxTokens;
+                        }
+                    }
+                });
+            });
+
+            // Remove container handler
+            const removeBtn = container.querySelector('.remove-container-btn');
+            removeBtn.addEventListener('click', () => {
+                if (wrapper.children.length > 1) {
+                    container.remove();
+                    updateContainerWidths();
+                    updateRemoveButtons();
+                    addModelBtn.disabled = wrapper.children.length >= MAX_CONTAINERS;
+                    updateAddButtonStyle();
+                }
+            });
+        }
+
+        function updateContainerWidths() {
+            const containerCount = wrapper.children.length;
+            const width = `${100 / containerCount}%`;
+            Array.from(wrapper.children).forEach(container => {
+                container.style.width = width;
+            });
+        }
+
+        function updateRemoveButtons() {
+            const containers = wrapper.children;
+            Array.from(containers).forEach(container => {
+                const removeBtn = container.querySelector('.remove-container-btn');
+                removeBtn.style.visibility = containers.length === 1 ? 'hidden' : 'visible';
+            });
+        }
+
+        function updateAddButtonStyle() {
+            const isDisabled = wrapper.children.length >= MAX_CONTAINERS;
+            addModelBtn.disabled = isDisabled;
+            addModelBtn.querySelector('.enabled-text').classList.toggle('hidden', isDisabled);
+            addModelBtn.querySelector('.disabled-text').classList.toggle('hidden', !isDisabled);
+        }
+
+        addModelBtn.addEventListener('click', () => {
+            if (wrapper.children.length < MAX_CONTAINERS) {
+                const newContainer = templateContainer.cloneNode(true);
+                wrapper.appendChild(newContainer);
+                initializeContainer(newContainer);
+                updateContainerWidths();
+                updateRemoveButtons();
+                updateAddButtonStyle();
+            }
+        });
+
+        // Saved prompt select handler
+        const savedPromptSelect = document.getElementById('savedPromptSelect');
+        savedPromptSelect.addEventListener('change', () => {
+            const selectedPrompt = savedPromptSelect.value;
+            if (selectedPrompt === 'story') {
+                sharedPromptArea.value = 'Write a story about a brave explorer discovering a new world...';
+            } else if (selectedPrompt === 'code') {
+                sharedPromptArea.value = 'Analyze this code and suggest improvements...';
+            } else if (selectedPrompt === 'concept') {
+                sharedPromptArea.value = 'Explain the concept of quantum computing in simple terms...';
+            }
+        });
+
+        // Shared prompt handlers
+        submitBtn.addEventListener('click', () => {
+            const prompt = sharedPromptArea.value;
+            if (!prompt.trim()) return;
+
+            Array.from(wrapper.children).forEach(container => {
+                const chatArea = container.querySelector('.chat-area');
+                chatArea.classList.remove('hidden');
+
+                // Add user message
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.className = 'mb-4 p-4 bg-base-300 border-l-4 border-primary';
+                userMessageDiv.innerHTML = `
+                    <div class="font-semibold text-sm mb-2 text-primary">User</div>
+                    <div class="text-base-content">${prompt}</div>
+                `;
+                chatArea.appendChild(userMessageDiv);
+
+                // Add model message
+                const modelMessageDiv = document.createElement('div');
+                const modelName = container.querySelector('.model-select').value;
+                modelMessageDiv.className = 'mb-4 p-4 bg-base-300 border-l-4 border-white';
+                modelMessageDiv.innerHTML = `
+                    <div class="font-semibold text-sm mb-2 text-white">${modelName}</div>
+                    <div class="text-white">Sample response from the model would appear here...</div>
+                `;
+                chatArea.appendChild(modelMessageDiv);
+
+                // Scroll to bottom
+                chatArea.scrollTop = chatArea.scrollHeight;
+
+                // Auto-collapse model configuration section
+                const configSection = container.querySelector('.config-section');
+                const toggleBtn = container.querySelector('.config-toggle');
+                if (configSection && !configSection.classList.contains('collapsed')) {
+                    configSection.classList.add('collapsed');
+                    toggleBtn.textContent = '▼';
+                }
+            });
+        });
+
+        // New experiment button handler
+        const newExperimentBtn = document.getElementById('newExperimentBtn');
+        newExperimentBtn.addEventListener('click', () => {
+            sharedPromptArea.value = '';
+            savedPromptSelect.value = '';
+            fileUpload.value = '';
+
+            // Remove all containers except the first one
+            while (wrapper.children.length > 1) {
+                wrapper.lastChild.remove();
+            }
+
+            // Reset the first (and now only) container
+            const container = wrapper.children[0];
+            container.querySelector('.provider-select').value = 'azure';
+            container.querySelector('.provider-select').dispatchEvent(new Event('change'));
+
+            // Reset reasoning toggle
+            const reasoningToggle = container.querySelector('.model-reasoning-toggle');
+            reasoningToggle.checked = false;
+            reasoningToggle.dispatchEvent(new Event('change'));
+
+            // Reset sliders
+            container.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.value = slider.defaultValue;
+                slider.dispatchEvent(new Event('input'));
+            });
+
+            // Clear chat area
+            const chatArea = container.querySelector('.chat-area');
+            chatArea.innerHTML = '';
+            chatArea.classList.add('hidden');
+
+            // Expand the config section
+            const configSection = container.querySelector('.config-section');
+            const toggleBtn = container.querySelector('.config-toggle');
+            configSection.classList.remove('collapsed');
+            toggleBtn.textContent = '▲';
+
+            // Update UI state
+            updateContainerWidths();
+            updateRemoveButtons();
+            updateAddButtonStyle();
+
+            // Close sidebar and show toggle button
+            sidebar.classList.add('-translate-x-full');
+            toggleSidebar.style.display = 'block';
+        });
+
+        // Initialize the add button style
+        updateAddButtonStyle();
+
+        // Allow Enter to submit (Shift+Enter for new line)
+        sharedPromptArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
