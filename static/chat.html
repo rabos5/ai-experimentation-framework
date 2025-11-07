@@ -195,6 +195,21 @@
 
                 <!-- Prompt Input Area -->
                 <div class="space-y-4">
+                    <!-- System Prompt (Optional, Collapsible) -->
+                    <div class="border border-base-300 rounded-lg">
+                        <div class="flex items-center justify-between py-3 pr-3 pl-5 cursor-pointer rounded-t-lg" id="systemPromptHeader">
+                            <span class="text-sm font-semibold">System Prompt (Optional)</span>
+                            <button type="button" id="systemPromptToggle" class="btn btn-ghost btn-xs">▼</button>
+                        </div>
+                        <div id="systemPromptSection" class="hidden px-5 pb-3">
+                            <textarea
+                                id="systemPromptArea"
+                                class="textarea textarea-bordered w-full"
+                                placeholder="Enter system prompt to set context for the model..."
+                                rows="3"></textarea>
+                        </div>
+                    </div>
+
                     <!-- Saved Prompts -->
                     <select id="savedPromptSelect" class="select select-bordered w-full">
                         <option value="" disabled selected style="color: #6b7280;">... optional select from saved prompts ...</option>
@@ -296,6 +311,25 @@
         const fileUploadBtn = document.getElementById('fileUploadBtn');
         const modelReasoningToggle = document.getElementById('modelReasoningToggle');
         const maxReasoningTokensControl = document.getElementById('maxReasoningTokensControl');
+        const systemPromptHeader = document.getElementById('systemPromptHeader');
+        const systemPromptToggle = document.getElementById('systemPromptToggle');
+        const systemPromptSection = document.getElementById('systemPromptSection');
+        const systemPromptArea = document.getElementById('systemPromptArea');
+
+        // Track if first submission has been made
+        let isFirstSubmit = true;
+
+        // System Prompt toggle handler
+        systemPromptHeader.addEventListener('click', () => {
+            systemPromptSection.classList.toggle('hidden');
+            systemPromptToggle.textContent = systemPromptSection.classList.contains('hidden') ? '▼' : '▲';
+        });
+
+        systemPromptToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            systemPromptSection.classList.toggle('hidden');
+            systemPromptToggle.textContent = systemPromptSection.classList.contains('hidden') ? '▼' : '▲';
+        });
 
         // File upload button handler
         fileUploadBtn.addEventListener('click', () => {
@@ -311,6 +345,14 @@
             savedPromptSelect.value = '';
             promptArea.value = '';
             fileUpload.value = '';
+
+            // Reset system prompt
+            systemPromptArea.value = '';
+            systemPromptArea.readOnly = false;
+            systemPromptArea.classList.remove('opacity-75', 'cursor-not-allowed');
+            systemPromptSection.classList.add('hidden');
+            systemPromptToggle.textContent = '▼';
+            isFirstSubmit = true;
 
             // Reset reasoning toggle
             modelReasoningToggle.checked = false;
@@ -413,10 +455,20 @@
             const prompt = promptArea.value.trim();
             if (!prompt) return;
 
+            // Lock system prompt after first submit
+            if (isFirstSubmit) {
+                systemPromptArea.readOnly = true;
+                systemPromptArea.classList.add('opacity-75', 'cursor-not-allowed');
+                isFirstSubmit = false;
+            }
+
             // Show chat area if hidden
             if (chatArea.classList.contains('hidden')) {
                 chatArea.classList.remove('hidden');
             }
+
+            // Get system prompt value (if provided)
+            const systemPrompt = systemPromptArea.value.trim();
 
             // Add user message
             const userMessageDiv = document.createElement('div');
@@ -431,6 +483,7 @@
             promptArea.value = '';
 
             // Simulate model response (replace with actual API call)
+            // In production, include systemPrompt in the API request
             setTimeout(() => {
                 const modelMessageDiv = document.createElement('div');
                 const modelName = modelSelect.options[modelSelect.selectedIndex].text;
